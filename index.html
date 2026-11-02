@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Система аналізу вмісту поштового і веб-трафіку — вправа</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--bg:#eef1ec;--card:#fff;--ink:#18212b;--mut:#5d6874;--line:#d3dad1;--acc:#0f5c4d;--accbg:#e4f0ec;--ok:#1c7a46;--okbg:#e3f3ea;--bad:#b3362b;--badbg:#fbe7e4;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10171a;--card:#182125;--ink:#e6ece8;--mut:#9aa8a6;--line:#2c3a3d;--acc:#5cc2a8;--accbg:#1a2d2b;--ok:#62cf8e;--okbg:#17301f;--bad:#ff8d80;--badbg:#3a1d1b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10171a;--card:#182125;--ink:#e6ece8;--mut:#9aa8a6;--line:#2c3a3d;--acc:#5cc2a8;--accbg:#1a2d2b;--ok:#62cf8e;--okbg:#17301f;--bad:#ff8d80;--badbg:#3a1d1b;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Onest,system-ui,"Segoe UI",Arial,sans-serif}
+#app{max-width:760px;margin:0 auto;padding:20px 16px 56px}
+h1{font-size:clamp(26px,5vw,38px);line-height:1.15;margin:0 0 10px;letter-spacing:-.01em}
+h2{font-size:20px;margin:0 0 14px;line-height:1.3}
+.mono{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-weight:500}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+.lead{color:var(--mut);margin:0 0 20px}
+label.f{display:block;font-weight:700;margin:18px 0 6px}
+input[type=text]{width:100%;font:inherit;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+input[type=text]:focus,select:focus{outline:2px solid var(--acc);outline-offset:1px}
+.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 22px;background:var(--acc);color:var(--onacc,#fff);cursor:pointer}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--onacc:#0b1412}}
+:root[data-theme="dark"]{--onacc:#0b1412}
+.btn.alt{background:transparent;color:var(--acc);border:1.5px solid var(--acc)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.bar{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;margin-bottom:16px}
+.bar i{height:6px;border-radius:3px;background:var(--line)}
+.bar i.cur{background:var(--acc)}.bar i.ok{background:var(--ok)}.bar i.no{background:var(--bad)}
+.meta{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--mut);margin-bottom:12px}
+.tag{font-size:13px;color:var(--acc);background:var(--accbg);padding:2px 10px;border-radius:99px}
+.qt{font-size:19px;font-weight:700;margin:0 0 16px;line-height:1.4}
+.ctx{background:var(--bg);border-left:3px solid var(--acc);padding:10px 14px;margin:0 0 16px;border-radius:0 8px 8px 0;color:var(--mut)}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;cursor:pointer}
+.opt:has(input:checked){border-color:var(--acc);background:var(--accbg)}
+.opt input{margin-top:5px;accent-color:var(--acc)}
+.row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.row>b,.row>span{flex:1 1 240px}
+select{font:inherit;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);max-width:100%}
+.row select{flex:1 1 260px}
+.cl{line-height:2.4;margin:0 0 6px}
+.cl select{margin:0 4px}
+.ord{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ord li{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px}
+.mv{display:flex;gap:4px}
+.mini{font:inherit;width:34px;height:34px;border-radius:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.segb,.chip,.gap,.ch{font:inherit;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer}
+.segb.on,.ch.on{background:var(--acc);border-color:var(--acc);color:var(--onacc,#fff)}
+.gap{min-width:90px;border-style:dashed;color:var(--mut);margin:0 3px}.gap.full{border-style:solid;color:var(--ink);background:var(--accbg)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.chip.used{opacity:.35}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.dg{grid-template-columns:1fr}}
+.dgb{font:inherit;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);padding:10px;cursor:pointer;text-align:left}
+.dgb.on{border-color:var(--acc);background:var(--accbg)}
+.dgb svg{width:100%;height:auto;display:block;margin-top:6px}
+.sl{width:100%;accent-color:var(--acc)}
+.big{font-size:34px;font-weight:700;color:var(--acc)}
+.scroll{overflow-x:auto}
+.mx{border-collapse:collapse;width:100%;min-width:420px}.mx th,.mx td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:center}.mx td:first-child{text-align:left}
+.tiles{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tiles span{width:38px;height:42px;display:grid;place-items:center;background:var(--accbg);border-radius:8px;font-size:18px}
+.fb{margin-top:18px;padding:14px 16px;border-radius:10px;white-space:pre-line}
+.fb.ok{background:var(--okbg);color:var(--ok)}.fb.no{background:var(--badbg);color:var(--bad)}
+.fb p{margin:6px 0 0;color:var(--ink)}
+.act{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.res{display:grid;gap:12px;grid-template-columns:repeat(3,1fr);margin:18px 0}
+@media(max-width:560px){.res{grid-template-columns:1fr}}
+.res div{background:var(--accbg);border-radius:12px;padding:14px}.res small{color:var(--mut);display:block}
+.rev{margin-top:20px;display:grid;gap:8px}
+.rev div{display:flex;gap:10px;font-size:14px;padding:8px 12px;border-radius:8px;background:var(--bg)}
+.rev b.ok{color:var(--ok)}.rev b.no{color:var(--bad)}
+#msg{margin-top:12px;color:var(--mut);font-size:14px}
+/* звіт для PDF */
+#report{position:absolute;left:-10000px;top:0;width:794px;background:#fff;color:#18212b;font:14px/1.5 Onest,Arial,sans-serif}
+#report .blk{padding:0 36px;background:#fff}
+#report .hd{padding:30px 36px 14px;border-bottom:3px solid #0f5c4d}
+#report h3{margin:0 0 4px;font-size:22px;color:#0f5c4d}
+#report .sm{padding:16px 36px;display:flex;gap:14px}
+#report .sm div{flex:1;border:1.5px solid #cfd8d3;border-radius:10px;padding:10px 14px}
+#report .sm b{font-size:24px;color:#0f5c4d;display:block}
+#report .q{border:1.5px solid #cfd8d3;border-radius:10px;padding:12px 16px;margin:6px 36px;border-left:6px solid #1c7a46}
+#report .q.no{border-left-color:#b3362b}
+#report .q h4{margin:0 0 6px;font-size:14px}
+#report .q .a{white-space:pre-line;margin:4px 0;font-size:13px}
+#report .st{font-weight:700}.ok{color:#1c7a46}.no{color:#b3362b}
+#report .sig{display:flex;gap:40px;padding:26px 36px 16px}#report .sig div{flex:1;border-top:1px solid #18212b;padding-top:4px;font-size:12px;color:#5d6874}
+@media print{#app{display:none}#report{position:static;width:auto}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<div id="report" aria-hidden="true"></div>
+<script>
+const h=(tag,attrs,...kids)=>{const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs||{})){if(k==='class')e.className=v;else if(k.startsWith('on'))e[k]=v;else e.setAttribute(k,v)}kids.flat().forEach(k=>e.append(k&&k.nodeType?k:document.createTextNode(k)));return e};
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const norm=s=>(s||'').toLowerCase().replace(/[^а-яіїєґa-z0-9]/g,'');
+const NO='— без відповіді —';
+
+/* ---------- конструктори завдань ---------- */
+function choice(box,o,ans,multi,keep){const items=keep?o:shuf(o);const w=h('div',{class:'opts'});items.forEach(t=>w.append(h('label',{class:'opt'},h('input',{type:multi?'checkbox':'radio',name:'c'}),h('span',{},t))));box.append(w);
+ return{get(){const s=[...w.querySelectorAll('input')].map((i,k)=>i.checked?items[k]:null).filter(Boolean);return{user:s.join('; ')||NO,ok:s.length===ans.length&&ans.every(a=>s.includes(a))}}}}
+function text(box,acc,ph){const i=h('input',{type:'text',placeholder:ph||'Ваша відповідь',autocomplete:'off'});box.append(i);return{get(){return{user:i.value.trim()||NO,ok:acc.map(norm).includes(norm(i.value))}}}}
+function match(box,pairs){pairs=shuf(pairs);const defs=shuf(pairs.map(p=>p[1]));const ss=pairs.map(([t])=>{const s=h('select',{},h('option',{value:''},'— оберіть —'),defs.map(d=>h('option',{value:d},d)));box.append(h('div',{class:'row'},h('b',{},t),s));return s});
+ return{get(){return{user:ss.map((s,i)=>pairs[i][0]+' → '+(s.value||'—')).join('\n'),ok:ss.every((s,i)=>s.value===pairs[i][1])}}}}
+function order(box,steps){let arr=shuf(steps);if(arr.join()===steps.join())arr.reverse();const ul=h('ol',{class:'ord'});box.append(ul);
+ const mv=(i,d)=>{const j=i+d;if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];draw()};
+ const draw=()=>{ul.innerHTML='';arr.forEach((s,i)=>ul.append(h('li',{},h('span',{},(i+1)+'. '+s),h('span',{class:'mv'},h('button',{class:'mini',type:'button','aria-label':'Вище',onclick:()=>mv(i,-1)},'↑'),h('button',{class:'mini',type:'button','aria-label':'Нижче',onclick:()=>mv(i,1)},'↓')))))};draw();
+ return{get(){return{user:arr.map((s,i)=>(i+1)+'. '+s).join('\n'),ok:arr.join('|')===steps.join('|')}}}}
+function cloze(box,parts){const p=h('p',{class:'cl'});const ss=[];parts.forEach(x=>{if(typeof x==='string')p.append(x);else{const s=h('select',{},h('option',{value:''},'…'),shuf(x.o).map(o=>h('option',{value:o},o)));ss.push([s,x.a]);p.append(s)}});box.append(p);
+ return{get(){return{user:ss.map(([s])=>s.value||'—').join(' / '),ok:ss.every(([s,a])=>s.value===a)}}}}
+function sort(box,items,cats){items=shuf(items);const vals=items.map(()=>'');items.forEach(([t],i)=>{const g=h('div',{class:'seg'});const bs=cats.map(k=>h('button',{type:'button',class:'segb',onclick:e=>{vals[i]=k;bs.forEach(x=>x.classList.toggle('on',x.textContent===k))}},k));g.append(...bs);box.append(h('div',{class:'row'},h('span',{},t),g))});
+ return{get(){return{user:items.map((it,i)=>it[0]+' → '+(vals[i]||'—')).join('\n'),ok:items.every((it,i)=>vals[i]===it[1])}}}}
+function diagram(box,want){const box_=(x,y,w,t,hot)=>`<rect x="${x}" y="${y}" width="${w}" height="30" rx="6" fill="none" stroke="currentColor" ${hot?'stroke-width="2.5"':''}/><text x="${x+w/2}" y="${y+19}" text-anchor="middle" font-size="11" fill="currentColor">${t}</text>`;
+ const ar=(x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-width="1.5" marker-end="url(#a)"/>`;
+ const defs='<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="currentColor"/></marker></defs>';
+ const A=`<svg viewBox="0 0 300 70">${defs}${box_(8,20,76,'Відправник')}${box_(112,20,76,'Контент',1)}${box_(216,20,76,'Одержувач')}${ar(84,35,110,35)}${ar(188,35,214,35)}</svg>`;
+ const B=`<svg viewBox="0 0 300 100">${defs}${box_(8,8,76,'Відправник')}${box_(216,8,76,'Одержувач')}${ar(84,23,214,23)}${box_(112,62,76,'Контент',1)}${ar(150,23,150,60)}</svg>`;
+ let v='';const bs=[['Схема A',A],['Схема B',B]].map(([n,s])=>{const b=h('button',{type:'button',class:'dgb',onclick:()=>{v=n;bs.forEach(x=>x.classList.toggle('on',x.dataset.n===v))}});b.dataset.n=n;b.innerHTML='<b>'+n+'</b>'+s;return b});
+ box.append(h('div',{class:'dg'},bs));return{get(){return{user:v||NO,ok:v===(want||'Схема B')}}}}
+function slider(box,min,max,ans){const o=h('span',{class:'big'},String(min));const s=h('input',{type:'range',class:'sl',min,max,value:min,step:1});s.oninput=()=>o.textContent=s.value;box.append(o,s);return{get(){return{user:s.value,ok:+s.value===ans}}}}
+function chunks(box,list,bad){let v=-1;const w=h('div',{class:'seg'});const bs=list.map((t,i)=>h('button',{type:'button',class:'ch segb',onclick:()=>{v=i;bs.forEach((b,k)=>b.classList.toggle('on',k===i))}},t));w.append(...bs);box.append(w);return{get(){return{user:v<0?NO:'«'+list[v]+'»',ok:v===bad}}}}
+function bank(box,parts,chips,ans){const vals=ans.map(()=>null);const p=h('p',{class:'cl'});const gs=[];let gi=0;parts.forEach(x=>{if(x===0){const k=gi++;const g=h('button',{type:'button',class:'gap',onclick:()=>{vals[k]=null;draw()}});gs.push(g);p.append(g)}else p.append(x)});
+ const cw=h('div',{class:'chips'});const cs=shuf(chips).map(t=>{const b=h('button',{type:'button',class:'chip',onclick:()=>{const k=vals.indexOf(null);if(k<0)return;vals[k]=t;draw()}},t);cw.append(b);return b});
+ const draw=()=>{gs.forEach((g,k)=>{g.textContent=vals[k]||'______';g.classList.toggle('full',!!vals[k])});cs.forEach(b=>b.classList.toggle('used',vals.includes(b.textContent)))};draw();box.append(p,cw);
+ return{get(){return{user:vals.map(v=>v||'—').join(' / '),ok:vals.every((v,k)=>v===ans[k])}}}}
+function matrix(box,cols,rows){rows=shuf(rows);const t=h('table',{class:'mx'});t.append(h('tr',{},h('th'),cols.map(c=>h('th',{},c))));const nm=rows.map((r,i)=>'m'+i);
+ rows.forEach((r,i)=>t.append(h('tr',{},h('td',{},r[0]),cols.map(c=>h('td',{},h('input',{type:'radio',name:nm[i],value:c,'aria-label':c,style:'accent-color:var(--acc)'}))))));box.append(h('div',{class:'scroll'},t));
+ const val=n=>(t.querySelector('input[name="'+n+'"]:checked')||{}).value;return{get(){return{user:rows.map((r,i)=>r[0]+' → '+(val(nm[i])||'—')).join('\n'),ok:rows.every((r,i)=>val(nm[i])===r[1])}}}}
+function unscramble(box,word,hint){let l=[...word];while(l.join('')===word)l=shuf(l);box.append(h('p',{class:'ctx'},'Підказка: '+hint),h('div',{class:'tiles'},l.map(c=>h('span',{class:'mono'},c))));return text(box,[word],'Складіть слово')}
+function rows(box,list){list=shuf(list);const ss=list.map(r=>{const s=h('select',{},h('option',{value:''},'— оберіть дію —'),shuf(r.o).map(o=>h('option',{value:o},o)));box.append(h('div',{class:'row'},h('b',{},r.l),s));return s});
+ return{get(){return{user:ss.map((s,i)=>list[i].l+' → '+(s.value||'—')).join('\n'),ok:ss.every((s,i)=>s.value===list[i].a)}}}}
+
+/* ---------- 15 питань ---------- */
+let QS=[];
+const QA=[
+{t:'Один правильний варіант',q:'Що таке система mail-контенту?',b:b=>choice(b,['Набір політик, правил і фільтрів для аналізу вхідного та вихідного поштового трафіку','Програма для створення та верстання електронних листів','Сервер, який зберігає лише паролі користувачів','Антивірус для перевірки файлів на локальному диску'],['Набір політик, правил і фільтрів для аналізу вхідного та вихідного поштового трафіку']),c:'Набір політик, правил і фільтрів для аналізу вхідного та вихідного поштового трафіку',e:'Mail-контент — це політики, правила та фільтри для аналізу пошти, що надходить і виходить.'},
+{t:'Кілька правильних варіантів',q:'Із яких груп серверів складається система mail-контент? Оберіть усі правильні відповіді.',b:b=>choice(b,['Група серверів розбору поштового потоку','Група серверів зберігання поштових повідомлень','Група серверів кешування веб-сторінок','Група серверів зберігання журналів і звітів'],['Група серверів розбору поштового потоку','Група серверів зберігання поштових повідомлень'],true),c:'Група серверів розбору поштового потоку; Група серверів зберігання поштових повідомлень',e:'Кешування та журнали — це групи серверів системи web-контент.'},
+{t:'Правда / неправда',q:'Твердження: «Система web-контент, на відміну від mail-контенту, може бути встановлена тільки в розрив».',b:b=>choice(b,['Правда','Неправда'],['Правда'],false,true),c:'Правда',e:'Mail-контент працює і в розриві, і у відгалуженні, а web-контент — лише в розриві.'},
+{t:'Коротка відповідь',q:'Режим роботи mail-контенту, за якого вся пошта обов’язково проходить крізь контент-систему та аналізується online, називається «у ______» (одне слово).',b:b=>text(b,['розриві','розрив','у розриві'],'Введіть слово'),c:'розриві',e:'У розриві система одразу ухвалює рішення: відправити чи затримати лист.'},
+{t:'Встановлення відповідності',q:'Зіставте поняття з їхнім описом.',b:b=>match(b,[['Режим «у розриві»','Весь трафік проходить через систему, рішення ухвалюється online'],['Режим «у відгалуженні»','Система отримує копію потоку, реакція на порушення — постфактум'],['Спам','Небажані, як правило рекламні, розсилки без згоди користувача'],['Adblock Plus','Розширення браузера для блокування реклами']]),c:'Режим «у розриві» → Весь трафік проходить через систему, рішення ухвалюється online\nРежим «у відгалуженні» → Система отримує копію потоку, реакція на порушення — постфактум\nСпам → Небажані, як правило рекламні, розсилки без згоди користувача\nAdblock Plus → Розширення браузера для блокування реклами',e:'Відгалуження працює з копією потоку, тож реагує вже після події.'},
+{t:'Послідовність дій',q:'Розташуйте кроки встановлення блокувальника реклами в Google Chrome у правильному порядку (стрілками ↑ ↓).',b:b=>order(b,['Відкрити Налаштування та керування Google Chrome → Інші інструменти → Розширення','Вибрати посилання «Інші розширення»','У полі «Пошук в магазині» ввести Adblock Plus і натиснути Enter','Обрати потрібне розширення зі списку та натиснути «Додати в Chrome»','Перезавантажити браузер']),c:'1. Відкрити Налаштування та керування Google Chrome → Інші інструменти → Розширення\n2. Вибрати посилання «Інші розширення»\n3. У полі «Пошук в магазині» ввести Adblock Plus і натиснути Enter\n4. Обрати потрібне розширення зі списку та натиснути «Додати в Chrome»\n5. Перезавантажити браузер',e:'Після перезавантаження браузера майже всі блоки реклами зникають зі сторінок.'},
+{t:'Заповнення пропусків (випадні списки)',q:'Оберіть потрібні слова.',b:b=>cloze(b,['Антиспамовий модуль поштового сервера ',{o:['відстежує','ігнорує','шифрує'],a:'відстежує'},' адреси, з яких ідуть спамові розсилки, а підозрілі листи спрямовує до папки ',{o:['Спам','Вхідні','Чернетки'],a:'Спам'},'. Проте інколи туди потрапляють ',{o:['корисні','вірусні','зашифровані'],a:'корисні'},' листи.']),c:'відстежує / Спам / корисні',e:'Через можливі помилки модуля папку «Спам» варто періодично переглядати.'},
+{t:'Класифікація',q:'До якої системи належить кожна ознака? Оберіть для кожного рядка.',b:b=>sort(b,[['Група серверів зберігання поштових повідомлень','Mail'],['Група серверів зберігання журналів (логів) і звітів','Web'],['Може працювати в режимі відгалуження','Mail'],['Кешування потоку','Web'],['Набір політик, правил і фільтрів','Обидві']],['Mail','Web','Обидві']),c:'Група серверів зберігання поштових повідомлень → Mail\nГрупа серверів зберігання журналів (логів) і звітів → Web\nМоже працювати в режимі відгалуження → Mail\nКешування потоку → Web\nНабір політик, правил і фільтрів → Обидві',e:'Політики, правила та фільтри є основою і mail-, і web-контенту.'},
+{t:'Вибір за схемою',q:'На якій схемі показано режим «у відгалуженні», де система аналізує копію потоку? (Квадрат «Контент» — контент-система.)',b:b=>diagram(b),c:'Схема B',e:'На схемі B основний потік іде повз систему, а до неї відгалужується копія.'},
+{t:'Шкала (повзунок)',q:'Скільки груп серверів входить до складу системи web-контент? Встановіть число.',b:b=>slider(b,0,6,2),c:'2',e:'Це група аналізу web-трафіку (з кешуванням) і група зберігання журналів та звітів.'},
+{t:'Пошук помилки в тексті',q:'Натисніть на фрагмент, у якому допущено помилку.',b:b=>chunks(b,['Спам — це розсилання повідомлень,','як правило, рекламного характеру,','великій кількості користувачів,','які самі дали на це згоду.'],3),c:'«які самі дали на це згоду.»',e:'Спам надсилається користувачам без їхньої згоди.'},
+{t:'Банк слів',q:'Натискайте слова з банку, щоб заповнити пропуски по порядку.',b:b=>bank(b,['Якщо антиспамовий модуль пропустив спам, користувач Gmail може натиснути кнопку «',0,'». Лист буде переміщено до папки «',0,'», а всі наступні листи цього відправника потраплятимуть туди ж.'],['Повідомити про спам','Спам','Видалити назавжди','Вхідні'],['Повідомити про спам','Спам']),c:'Повідомити про спам / Спам',e:'Так програма запам’ятовує адресу відправника спаму.'},
+{t:'Матриця «ознака — система»',q:'Для кожного твердження оберіть систему, до якої воно стосується однозначно.',b:b=>matrix(b,['Mail-контент','Web-контент'],[['Може бути встановлена тільки в розрив','Web-контент'],['Може отримувати копію потоку й аналізувати її постфактум','Mail-контент'],['Містить групу серверів для зберігання журналів і звітів','Web-контент']]),c:'Може бути встановлена тільки в розрив → Web-контент\nМоже отримувати копію потоку й аналізувати її постфактум → Mail-контент\nМістить групу серверів для зберігання журналів і звітів → Web-контент',e:'Режим відгалуження доступний лише для mail-контенту.'},
+{t:'Анаграма',q:'Складіть термін із літер.',b:b=>unscramble(b,'РОЗШИРЕННЯ','програма, що вбудовується у браузер Google Chrome (наприклад, для блокування реклами)'),c:'РОЗШИРЕННЯ',e:'У Google Chrome такі програми називаються розширеннями.'},
+{t:'Ситуаційна задача',q:'Ситуація. Студентка очікує важливий лист від викладача. Вона виявила, що він потрапив до папки «Спам», а у «Вхідних» лежить рекламна розсилка від невідомої адреси. Оберіть правильні дії.',b:b=>rows(b,[{l:'Дія з листом від викладача',o:['Залишити в папці «Спам»','Переглянути папку «Спам» і повернути лист до «Вхідних»','Видалити лист'],a:'Переглянути папку «Спам» і повернути лист до «Вхідних»'},{l:'Дія з рекламною розсилкою',o:['Відповісти відправнику','Перейти за посиланнями в листі','Натиснути «Повідомити про спам»'],a:'Натиснути «Повідомити про спам»'}]),c:'Дія з листом від викладача → Переглянути папку «Спам» і повернути лист до «Вхідних»\nДія з рекламною розсилкою → Натиснути «Повідомити про спам»',e:'Антиспам помиляється, тому папку «Спам» треба переглядати; а пропущений спам — позначати.'}
+];
+/* другий варіант кожного типу: при кожному запуску випадково береться A або B, порядок питань теж випадковий */
+const QB=[
+{t:'Один правильний варіант',q:'Що таке спам?',b:b=>choice(b,['Розсилання повідомлень, як правило рекламного характеру, великій кількості користувачів без їхньої згоди','Лист із вірусом, що знищує файли на комп’ютері','Автоматична копія вхідної пошти, що зберігається на сервері','Службове повідомлення від адміністратора поштового сервера'],['Розсилання повідомлень, як правило рекламного характеру, великій кількості користувачів без їхньої згоди']),c:'Розсилання повідомлень, як правило рекламного характеру, великій кількості користувачів без їхньої згоди',e:'Спам надсилається без згоди користувачів, здебільшого електронною поштою.'},
+{t:'Кілька правильних варіантів',q:'Із яких груп серверів складається система web-контент? Оберіть усі правильні відповіді.',b:b=>choice(b,['Група серверів аналізу вмісту web-трафіку (з кешуванням потоку)','Група серверів зберігання журналів (логів і звітів)','Група серверів розбору поштового потоку','Група серверів зберігання поштових повідомлень'],['Група серверів аналізу вмісту web-трафіку (з кешуванням потоку)','Група серверів зберігання журналів (логів і звітів)'],true),c:'Група серверів аналізу вмісту web-трафіку (з кешуванням потоку); Група серверів зберігання журналів (логів і звітів)',e:'Групи розбору поштового потоку та зберігання повідомлень належать до mail-контенту.'},
+{t:'Правда / неправда',q:'Твердження: «Антиспамовий модуль ніколи не помиляється, тому папку «Спам» переглядати не потрібно».',b:b=>choice(b,['Правда','Неправда'],['Неправда'],false,true),c:'Неправда',e:'Інколи корисні листи потрапляють до папки «Спам», тому її варто періодично переглядати.'},
+{t:'Коротка відповідь',q:'Режим роботи mail-контенту, за якого система отримує копію поштового потоку, називається «у ______» (одне слово).',b:b=>text(b,['відгалуженні','відгалуження','у відгалуженні'],'Введіть слово'),c:'відгалуженні',e:'У відгалуженні аналіз і реакція на порушення політик відбуваються постфактум.'},
+{t:'Встановлення відповідності',q:'Зіставте поняття з їхнім описом.',b:b=>match(b,[['Mail-контент','Набір політик, правил і фільтрів для аналізу вхідного й вихідного поштового трафіку'],['Web-контент','Система, яку можна встановити лише «в розрив»'],['Кнопка «Повідомити про спам»','Переміщує лист до папки «Спам» і спрямовує туди наступні листи відправника'],['Розширення Google Chrome','Програма, вбудована в браузер, наприклад для блокування реклами']]),c:'Mail-контент → Набір політик, правил і фільтрів для аналізу вхідного й вихідного поштового трафіку\nWeb-контент → Система, яку можна встановити лише «в розрив»\nКнопка «Повідомити про спам» → Переміщує лист до папки «Спам» і спрямовує туди наступні листи відправника\nРозширення Google Chrome → Програма, вбудована в браузер, наприклад для блокування реклами',e:'Кожне поняття має власну роль у захисті пошти та веб-трафіку.'},
+{t:'Послідовність дій',q:'Розташуйте дії користувача Gmail, коли спам потрапив до «Вхідних», у правильному порядку (стрілками ↑ ↓).',b:b=>order(b,['Відкрити лист, який потрапив до «Вхідних» і є спамом','Натиснути кнопку «Повідомити про спам»','Лист переміщується до папки «Спам»','Наступні листи від цього відправника потрапляють до папки «Спам»']),c:'1. Відкрити лист, який потрапив до «Вхідних» і є спамом\n2. Натиснути кнопку «Повідомити про спам»\n3. Лист переміщується до папки «Спам»\n4. Наступні листи від цього відправника потрапляють до папки «Спам»',e:'Так антиспамовий модуль «вчиться» на діях користувача.'},
+{t:'Заповнення пропусків (випадні списки)',q:'Оберіть потрібні слова.',b:b=>cloze(b,['Спам — це розсилання повідомлень, як правило, ',{o:['рекламного','службового','секретного'],a:'рекламного'},' характеру великій кількості користувачів ',{o:['без','за','після'],a:'без'},' їхньої згоди. Більшість спаму йде через ',{o:['електронну пошту','флеш-накопичувачі','принтери'],a:'електронну пошту'},'.']),c:'рекламного / без / електронну пошту',e:'Саме тому поштові сервери мають модуль захисту від спаму.'},
+{t:'Класифікація',q:'До якого режиму роботи mail-контенту належить кожна ознака?',b:b=>sort(b,[['Лист обов’язково проходить крізь контент-систему','У розриві'],['Система аналізує копію потоку','У відгалуженні'],['Рішення «відправити / затримати» ухвалюється online','У розриві'],['Реакція на порушення політик відбувається постфактум','У відгалуженні']],['У розриві','У відгалуженні']),c:'Лист обов’язково проходить крізь контент-систему → У розриві\nСистема аналізує копію потоку → У відгалуженні\nРішення «відправити / затримати» ухвалюється online → У розриві\nРеакція на порушення політик відбувається постфактум → У відгалуженні',e:'Розрив — аналіз «на шляху» трафіку, відгалуження — аналіз копії.'},
+{t:'Вибір за схемою',q:'На якій схемі показано режим «у розриві», де весь потік проходить через контент-систему? (Квадрат «Контент» — контент-система.)',b:b=>diagram(b,'Схема A'),c:'Схема A',e:'На схемі A система стоїть на шляху між відправником і одержувачем.'},
+{t:'Шкала (повзунок)',q:'Скільки способів (режимів) роботи має система mail-контент? Встановіть число.',b:b=>slider(b,0,5,2),c:'2',e:'Це режими «у розриві» та «у відгалуженні».'},
+{t:'Пошук помилки в тексті',q:'Натисніть на фрагмент, у якому допущено помилку.',b:b=>chunks(b,['Mail-контент може працювати у розриві та у відгалуженні,','тоді як web-контент','може бути встановлений','і в розриві, і у відгалуженні.'],3),c:'«і в розриві, і у відгалуженні.»',e:'Web-контент може бути встановлений тільки в розрив.'},
+{t:'Банк слів',q:'Натискайте слова з банку, щоб заповнити пропуски по порядку.',b:b=>bank(b,['Спам надсилається користувачам без їхньої ',0,'. Тому поштові сервери мають модуль, що відстежує ',0,' спамерів і направляє такі листи до папки «Спам».'],['згоди','адреси','паролі','підписи'],['згоди','адреси']),c:'згоди / адреси',e:'Модуль накопичує відомості про адреси, з яких ідуть спамові розсилки.'},
+{t:'Матриця «ознака — система»',q:'Для кожного твердження оберіть режим роботи mail-контенту, якого воно стосується.',b:b=>matrix(b,['У розриві','У відгалуженні'],[['Система може затримати лист до його відправки','У розриві'],['Система працює з копією потоку','У відгалуженні'],['Реакція на порушення політик відбувається постфактум','У відгалуженні']]),c:'Система може затримати лист до його відправки → У розриві\nСистема працює з копією потоку → У відгалуженні\nРеакція на порушення політик відбувається постфактум → У відгалуженні',e:'Затримати лист можна лише тоді, коли він проходить крізь систему.'},
+{t:'Анаграма',q:'Складіть термін із літер.',b:b=>unscramble(b,'ФІЛЬТРИ','політики, правила та ... — складові систем mail- і web-контенту'),c:'ФІЛЬТРИ',e:'Системи контенту — це набір політик, правил і фільтрів.'},
+{t:'Ситуаційна задача',q:'Ситуація. У поштовій скриньці Андрія щодня з’являються нові рекламні листи, а іноді корисні листи зникають. Оберіть правильні дії.',b:b=>rows(b,[{l:'Антиспам пропустив рекламний лист до «Вхідних»',o:['Натиснути «Повідомити про спам»','Переслати лист усім знайомим','Перейти за посиланням, щоб відписатися'],a:'Натиснути «Повідомити про спам»'},{l:'Як не втратити корисні листи',o:['Періодично переглядати папку «Спам»','Ніколи не відкривати папку «Спам»','Вимкнути електронну пошту'],a:'Періодично переглядати папку «Спам»'}]),c:'Антиспам пропустив рекламний лист до «Вхідних» → Натиснути «Повідомити про спам»\nЯк не втратити корисні листи → Періодично переглядати папку «Спам»',e:'Користувач допомагає модулю: позначає спам і перевіряє папку «Спам».'}
+];
+
+/* ---------- стан і екрани ---------- */
+const app=document.getElementById('app');
+let name='',idx=0,res=[],cur=null;
+const bar=()=>h('div',{class:'bar'},QS.map((_,i)=>h('i',{class:i<res.length?(res[i].ok?'ok':'no'):i===idx?'cur':''})));
+
+function start(){
+ idx=0;res=[];app.innerHTML='';QS=shuf(QA.map((a,i)=>Math.random()<.5?a:QB[i]));
+ const inp=h('input',{type:'text',id:'nm',placeholder:'Наприклад: Шевченко Тарас',autocomplete:'name'});
+ const go=h('button',{class:'btn',type:'button',onclick:()=>{const v=inp.value.trim();if(v.length<3||!/\s/.test(v)){inp.focus();inp.style.borderColor='var(--bad)';return}name=v;question()}},'Почати вправу');
+ inp.onkeydown=e=>{if(e.key==='Enter')go.click()};
+ app.append(h('h1',{},'Контент-контроль: перевірка трафіку'),
+  h('p',{class:'lead'},'Інформатика, 11 клас. Тема: «Система аналізу вмісту поштового і веб-трафіку» (розділ 3, § 13). 15 завдань різних типів; після кожної відповіді ви побачите результат і пояснення. Наприкінці буде сформовано PDF-звіт, який потрібно здати вчителю.'),
+  h('div',{class:'card'},h('label',{class:'f',for:'nm'},'Прізвище та ім’я учня'),inp,h('div',{class:'act'},go)));
+}
+
+function question(){
+ const q=QS[idx];app.innerHTML='';
+ const box=h('div');cur=q.b(box);
+ const fb=h('div');const chk=h('button',{class:'btn',type:'button'},'Перевірити');
+ chk.onclick=()=>{const r=cur.get();res.push({t:q.t,q:q.q,user:r.user,c:q.c,ok:r.ok,e:q.e});
+  box.querySelectorAll('input,select,button').forEach(x=>x.disabled=true);chk.remove();
+  fb.className='fb '+(r.ok?'ok':'no');fb.append(h('b',{},r.ok?'✓ Правильно':'✕ Неправильно'));
+  if(!r.ok)fb.append(h('p',{},'Правильна відповідь:\n'+q.c));fb.append(h('p',{},q.e));
+  const nx=h('button',{class:'btn',type:'button',onclick:()=>{idx++;idx<QS.length?question():finish()}},idx<QS.length-1?'Далі':'Завершити');
+  act.append(nx);nx.focus();document.querySelector('.bar').replaceWith(bar())};
+ const act=h('div',{class:'act'},chk);
+ app.append(bar(),h('div',{class:'card'},h('div',{class:'meta'},h('span',{},'Питання '+(idx+1)+' із '+QS.length),h('span',{class:'tag'},q.t)),h('p',{class:'qt'},q.q),box,fb,act));
+ window.scrollTo(0,0);
+}
+
+const stats=()=>{const n=res.filter(r=>r.ok).length;const pct=Math.round(n/QS.length*100);let pts=Math.round(pct*11/100);if(pct>0&&pts<1)pts=1;return{n,pct,pts}};
+const verdict=p=>p>=90?'відмінно':p>=75?'добре':p>=55?'задовільно':p>=30?'потрібно повторити матеріал':'потрібне повторне опрацювання теми';
+
+function finish(){
+ const s=stats();app.innerHTML='';
+ const msg=h('div',{id:'msg'});
+ const pdfBtn=h('button',{class:'btn',type:'button',onclick:()=>savePdf(pdfBtn,msg)},'Зберегти PDF для вчителя');
+ app.append(bar(),h('div',{class:'card'},h('h2',{},name),h('p',{class:'lead'},'Результат: '+verdict(s.pct)+'.'),
+  h('div',{class:'res'},h('div',{},h('small',{},'Правильних відповідей'),h('span',{class:'big'},s.n+' / '+QS.length)),h('div',{},h('small',{},'Результат у відсотках'),h('span',{class:'big'},s.pct+'%')),h('div',{},h('small',{},'Оцінка за 11-бальною шкалою'),h('span',{class:'big'},String(s.pts)))),
+  h('div',{class:'act'},pdfBtn,h('button',{class:'btn alt',type:'button',onclick:()=>window.print()},'Друк'),h('button',{class:'btn alt',type:'button',onclick:start},'Пройти знову')),msg,
+  h('div',{class:'rev'},res.map((r,i)=>h('div',{},h('b',{class:r.ok?'ok':'no'},r.ok?'✓':'✕'),h('span',{},(i+1)+'. '+r.t))))));
+ buildReport();window.scrollTo(0,0);
+}
+
+function buildReport(){
+ const s=stats(),R=document.getElementById('report');R.innerHTML='';
+ const d=new Date().toLocaleDateString('uk-UA',{day:'2-digit',month:'long',year:'numeric'});
+ const blocks=[];const add=el=>{R.append(el);blocks.push(el)};
+ add(h('div',{class:'hd'},h('h3',{},'Звіт про виконання інтерактивної вправи'),h('div',{},'Інформатика, 11 клас · Тема: «Система аналізу вмісту поштового і веб-трафіку» (розділ 3, § 13)'),h('div',{style:'margin-top:10px;font-size:18px'},h('b',{},'Учень: '),name),h('div',{style:'color:#5d6874'},'Дата: '+d)));
+ add(h('div',{class:'sm'},h('div',{},'Правильних відповідей',h('b',{},s.n+' з '+QS.length)),h('div',{},'Результат',h('b',{},s.pct+'%')),h('div',{},'Оцінка (11-бальна шкала)',h('b',{},s.pts+' б.'))));
+ add(h('div',{class:'blk',style:'font-size:12px;color:#5d6874;padding-bottom:8px'},'Шкала: кожна правильна відповідь — 1 бал із 15; оцінка = відсоток × 11 / 100, округлення до цілого. Загальний висновок: '+verdict(s.pct)+'.'));
+ res.forEach((r,i)=>add(h('div',{class:'q '+(r.ok?'':'no')},h('h4',{},(i+1)+'. ['+r.t+'] '+r.q),h('div',{class:'a'},h('b',{},'Відповідь учня: '),'\n'+r.user),h('div',{class:'a'},h('span',{class:'st '+(r.ok?'ok':'no')},r.ok?'✓ Правильно':'✕ Неправильно')),r.ok?'':h('div',{class:'a'},h('b',{},'Правильна відповідь: '),'\n'+r.c))));
+ add(h('div',{class:'sig'},h('div',{},'Підпис учня'),h('div',{},'Оцінка вчителя / підпис')));
+ R._blocks=blocks;
+}
+
+async function savePdf(btn,msg){
+ btn.disabled=true;msg.textContent='Формую PDF…';
+ try{
+  const R=document.getElementById('report');const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,H=297,M=10;let y=M;
+  for(const el of R._blocks){
+   const cv=await html2canvas(el,{scale:2,backgroundColor:'#ffffff'});
+   const w=W-2*M,hh=cv.height*w/cv.width;
+   if(y+hh>H-M&&y>M){pdf.addPage();y=M}
+   pdf.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',M,y,w,hh);y+=hh+1;
+  }
+  const n=pdf.getNumberOfPages();for(let i=1;i<=n;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(120);pdf.text(i+' / '+n,W-M,H-4,{align:'right'})}
+  const blob=pdf.output('blob');const fn='Kontent-kontrol_'+name.replace(/\s+/g,'_').replace(/[\\\/:*?"<>|]/g,'')+'.pdf';
+  let dl=null;try{dl=await window.claude.use('downloads')}catch(e){}
+  if(dl){try{await dl.save({filename:fn,data:blob});msg.textContent='PDF збережено. Надішліть або віддайте його вчителю.'}catch(e){msg.textContent=e&&e.code==='declined'?'Збереження скасовано. Спробуйте ще раз.':'Не вдалося зберегти файл. Скористайтеся кнопкою «Друк» і оберіть «Зберегти як PDF».'}}
+  else msg.textContent='Прямe збереження недоступне. Натисніть «Друк» і оберіть «Зберегти як PDF».';
+ }catch(e){msg.textContent='Помилка формування PDF. Скористайтеся кнопкою «Друк» і оберіть «Зберегти як PDF».'}
+ btn.disabled=false;
+}
+start();
+</script>
+</body>
+</html>
